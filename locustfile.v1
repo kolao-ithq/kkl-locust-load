@@ -1,0 +1,72 @@
+from locust import HttpUser, task, between
+import logging
+
+logger = logging.getLogger("locust")
+
+class SellWorkflowUser(HttpUser):
+    wait_time = between(1, 2)
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YEfC6vUNLbusDBMXFTST3YuY7qcHvnk92KUf41mYWp1xMMu3BfLVsim07-7GtUCCYP7W4ooKbIk_rXlpTp9IdvLwFOVAJFGrxOvw7w6no1TFmW08pBoZqbSO8F-48BZsnACsW4uiMj2iiR23Hv8GSk7TkmsDyMCGjhXkz14lUUpjb6UZLRJ0Srxns138k0LGoqx8pg.H0CFyRcTH8D9iUpoFTwOfJ3FPjlaj4vkz3uGvPflEDI"
+
+    def on_start(self):
+        """Set up authentication headers for all requests"""
+        self.client.headers = {"Authorization": f"Bearer {self.token}"}
+
+    @task
+    def sell_payment_callback(self):
+        # Step 1: Sell
+        sell_payload = {
+            "doi_id": 826,
+            "phone": "02056892644",
+            "payment_method_id": 4,
+            "lotto_draw_number": [
+                {
+                    "digit": "27",
+                    "money": 2000
+                },
+                {
+                    "digit": "67",
+                    "money": 2000
+                }
+            ]
+        }
+        sell_response = self.client.post("/api/v1/customer/oauth/lotto/draw/create", json=sell_payload)
+        print("from sell response: " + str(sell_response.json()))
+        if sell_response.status_code != 201:
+            print(f"Sell failed: {sell_response.status_code} - {sell_response.text}")
+            return
+
+        # Extract bill_id from sell response for payment payload
+        response_data = sell_response.json().get("data", {})
+        bill_id = response_data.get("id")
+        if not bill_id:
+            print(f"Failed to extract bill_id from sell response: {response_data}")
+            return  # stop if bill_id is missing
+
+        # Step 2: Payment
+        payment_payload = {
+            "bill_id": bill_id,
+            "customer_account": "",
+            "account_type" : "",
+            "payment_link_id": 2,
+            "payment_method_id": 4
+        }
+        print(f"Calling create-payment with bill_id: {bill_id}")
+        payment_response = self.client.post("/api/v1/oauth/customer/create-payment", json=payment_payload)
+
+        if payment_response.status_code != 200:
+            print(f"Payment failed: {payment_response.status_code} - {payment_response.text}")
+            return
+
+        sell_response = self.client.get("/api/v1/customer/oauth/lotto/draw/DetailBillHistory?id=" + str(bill_id))
+        print("from bill history response: " + str(sell_response.json()))
+        if sell_response.status_code != 200:
+            print(f"Bill history failed: {sell_response.status_code} - {sell_response.text}")
+            return
+        ticket = sell_response.json().get("data", {}).get("ticket_id")
+        callback = {
+            "ticket_id": ticket
+        }
+        headers = {
+            "x-api-key": "ZoiPCydmGh7vsVKGPLBfUZ9E"
+        }
+        self.client.post("/api/v1/bcel/callback", json=callback, headers=headers)
