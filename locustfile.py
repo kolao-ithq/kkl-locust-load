@@ -6,6 +6,7 @@ logger = logging.getLogger("locust")
 
 PHONE = "02056677603"
 CUSTOMER_ID = 50
+BCEL_CALLBACK_API_KEY = "ZoiPCydmGh7vsVKGPLBfUZ9E"
 
 ENDPOINTS = {
     "point_balance": f"/app/api/v1/loyalty/balance/{CUSTOMER_ID}",
@@ -152,7 +153,8 @@ class SellWorkflowTasks(SequentialTaskSet):
             return
         name = ENDPOINTS["bcel_callback"]
         payload = {"ticket_id": ticket_id}
-        response = self.client.post(name, json=payload, name=name)
+        headers = {"x-api-key": BCEL_CALLBACK_API_KEY}
+        response = self.client.post(name, json=payload, headers=headers, name=name)
         if not self._assert_ok(response, "Step 5: BCEL Callback"):
             return
         logger.info("[Step 5] BCEL callback: ticket_id=%s response=%s", ticket_id, response.text)
