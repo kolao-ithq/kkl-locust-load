@@ -19,3 +19,14 @@ Step 4: Run
 ```
     locust
 ```# kkl-locust
+
+
+watch -n 1 "docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'"
+
+docker service scale <service_name>=6
+
+docker service scale \
+  ithq-kkl-app-services=8 \
+  ithq-kkl-sell-services=8 \
+  ithq-kkl-producer-service=6 \
+  ithq-kkl-core=6
