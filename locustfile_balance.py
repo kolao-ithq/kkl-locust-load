@@ -16,7 +16,7 @@ BILL_HISTORY_LIMIT = 10
 
 ENDPOINTS = {
     "point_balance": "/app/api/v1/loyalty/balance/{customer_id}",
-    "bill_history": "/app/api/v1/bill-history/list",
+    "bill_history": "/app/api/v1/bill-history/list?limit=10&cursor=0",
 }
 
 

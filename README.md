@@ -33,3 +33,7 @@ docker service scale \
 
   docker service scale ithq-kkl-app-services=12
 
+
+
+
+locust -f locustfile_balance.py

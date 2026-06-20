@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Private Workflow Errors Report</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --border: #475569;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+  }
+  .card-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-value { font-size: 2rem; font-weight: 700; margin: 0.25rem 0; }
+  .card-sub { color: var(--muted); font-size: 0.85rem; }
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .status-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid;
+  }
+  .status-code { font-size: 0.85rem; font-weight: 600; }
+  .status-count { font-size: 1.75rem; font-weight: 700; }
+  .status-pct { color: var(--muted); font-size: 0.85rem; }
+  .status-desc { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  section { margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.9rem;
+  }
+  th {
+    background: var(--surface2);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  td { padding: 0.65rem 1rem; border-top: 1px solid var(--border); vertical-align: middle; }
+  tr:hover td { background: rgba(59,130,246,0.06); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .err-en { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 0.82rem; word-break: break-word; max-width: 360px; }
+  .th { color: #86efac; font-size: 0.85rem; }
+  .muted { color: var(--muted); }
+  .bar-wrap { background: var(--surface2); border-radius: 4px; height: 8px; min-width: 80px; }
+  .bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .insight {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .insight h3 { font-size: 1rem; margin-bottom: 0.75rem; color: #93c5fd; }
+  .insight ul { padding-left: 1.25rem; color: var(--muted); }
+  .insight li { margin-bottom: 0.4rem; }
+  .insight strong { color: var(--text); }
+  .table-wrap { overflow-x: auto; border-radius: 10px; }
+  footer { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 Private Workflow Errors Report</h1>
+  <p class="subtitle">สรุป error จาก <code>private-workflow-errors.log</code> — งวด lot_id=37 (ງວດວັນຈັນທີ 22-06-2026)</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Total Errors</div>
+      <div class="card-value">32,438</div>
+      <div class="card-sub">error records ทั้งหมด</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Test Period</div>
+      <div class="card-value" style="font-size:1.1rem">2026-06-20 11:48:12</div>
+      <div class="card-sub">→ 2026-06-20 12:02:36</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Dominant Error</div>
+      <div class="card-value" style="font-size:1.1rem;color:#f59e0b">HTTP 422</div>
+      <div class="card-sub">31,409 ครั้ง (96.8%)</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Top Message</div>
+      <div class="card-value" style="font-size:0.95rem;color:#86efac">Unable to process...</div>
+      <div class="card-sub">22,023 ครั้ง (67.9%)</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <h3>🔍 สรุปภาพรวม</h3>
+    <ul>
+      <li><strong>Step 1: Create Bill</strong> เป็นจุดที่ error มากที่สุด (31,726 ครั้ง / 97.8%) — เกือบทั้งหมดเป็น HTTP 422</li>
+      <li><strong>"Unable to process ticket purchase"</strong> (22,023 ครั้ง) — server รับ load ไม่ไหวหรือ process ซื้อสลากล้มเหลว</li>
+      <li><strong>"เลขสลากเต็มแล้ว"</strong> (9,272 ครั้ง) — quota/limit ของเลขสลากเต็ม (business rule)</li>
+      <li><strong>Gateway Timeout 504</strong> (372 ครั้ง) — server/gateway ตอบช้าเกิน timeout</li>
+      <li><strong>Get Lot Active connection failed</strong> (547 ครั้ง, status=0) — ช่วงท้าย test server อาจล่มหรือ connection reset</li>
+      <li><strong>Step 3: Get Bill Detail</strong> (165 ครั้ง) — ส่วนใหญ่ BILL_NOT_FOUND (404) เพราะ Step 1 ล้มเหลว</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>HTTP Status Codes</h2>
+    <div class="status-grid">
+    <div class="status-card" style="border-left-color:#f59e0b">
+      <div class="status-code" style="color:#f59e0b">HTTP 422</div>
+      <div class="status-count">31,409</div>
+      <div class="status-pct">96.8%</div>
+      <div class="status-desc">Unprocessable Entity<br><small>Business validation error</small></div>
+    </div>
+    <div class="status-card" style="border-left-color:#64748b">
+      <div class="status-code" style="color:#64748b">HTTP 0</div>
+      <div class="status-count">547</div>
+      <div class="status-pct">1.7%</div>
+      <div class="status-desc">Connection Failed<br><small>เชื่อมต่อไม่ได้</small></div>
+    </div>
+    <div class="status-card" style="border-left-color:#ef4444">
+      <div class="status-code" style="color:#ef4444">HTTP 504</div>
+      <div class="status-count">372</div>
+      <div class="status-pct">1.1%</div>
+      <div class="status-desc">Gateway Timeout<br><small>Server ไม่ตอบทัน</small></div>
+    </div>
+    <div class="status-card" style="border-left-color:#8b5cf6">
+      <div class="status-code" style="color:#8b5cf6">HTTP 404</div>
+      <div class="status-count">110</div>
+      <div class="status-pct">0.3%</div>
+      <div class="status-desc">Not Found<br><small>ไม่พบ resource</small></div>
+    </div></div>
+  </section>
+
+  <section>
+    <h2>Errors by Workflow Step</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Count</th><th>%</th><th>Distribution</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>Step 1: Create Bill</td>
+      <td class="num">31,726</td>
+      <td class="num">97.8%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#3b82f6"></div></div></td>
+    </tr>
+    <tr>
+      <td>Get Lot Active</td>
+      <td class="num">547</td>
+      <td class="num">1.7%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#3b82f6"></div></div></td>
+    </tr>
+    <tr>
+      <td>Step 3: Get Bill Detail</td>
+      <td class="num">165</td>
+      <td class="num">0.5%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#3b82f6"></div></div></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Error Messages</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Error (EN)</th><th>ความหมาย (TH)</th><th>Count</th><th>%</th><th>Distribution</th></tr></thead>
+        <tbody>
+    <tr>
+      <td class="err-en">Unable to process ticket purchase, please try again</td>
+      <td><span class="th">ไม่สามารถประมวลผลการซื้อได้ กรุณาลองใหม่</span></td>
+      <td class="num">22,023</td>
+      <td class="num">67.9%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">ຂໍອະໄພ ເລກສ່ຽງຂອງທ່ານອາດເຕັມແລ້ວ</td>
+      <td><span class="th">ขออภัย เลขสลากของคุณอาจเต็มแล้ว</span></td>
+      <td class="num">9,272</td>
+      <td class="num">28.6%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:42%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">(connection failed - no response)</td>
+      <td><span class="th">เชื่อมต่อไม่ได้ / ไม่มี response</span></td>
+      <td class="num">547</td>
+      <td class="num">1.7%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">504 Gateway Timeout</td>
+      <td><span class="th">Gateway Timeout — Server ไม่ตอบทัน</span></td>
+      <td class="num">372</td>
+      <td class="num">1.1%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">BILL_NOT_FOUND</td>
+      <td><span class="th">ไม่พบบิล (BILL_NOT_FOUND)</span></td>
+      <td class="num">110</td>
+      <td class="num">0.3%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">Failed to save your order, please try again</td>
+      <td><span class="th">บันทึกออเดอร์ไม่สำเร็จ กรุณาลองใหม่</span></td>
+      <td class="num">59</td>
+      <td class="num">0.2%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">Error 1815 (HY000): Internal error: Session creation failed</td>
+      <td><span class="th">DB Error: Session creation failed</span></td>
+      <td class="num">46</td>
+      <td class="num">0.1%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr>
+    <tr>
+      <td class="err-en">invalid connection</td>
+      <td><span class="th">การเชื่อมต่อ DB ไม่ถูกต้อง</span></td>
+      <td class="num">9</td>
+      <td class="num">0.0%</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:2%;background:#10b981"></div></div></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Step × Error Message</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Error (EN)</th><th>ความหมาย (TH)</th><th>Count</th><th>%</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>Step 1: Create Bill</td>
+      <td class="err-en">Unable to process ticket purchase, please try again</td>
+      <td>ไม่สามารถประมวลผลการซื้อได้ กรุณาลองใหม่</td>
+      <td class="num">22,023</td>
+      <td class="num">67.9%</td>
+    </tr>
+    <tr>
+      <td>Step 1: Create Bill</td>
+      <td class="err-en">ຂໍອະໄພ ເລກສ່ຽງຂອງທ່ານອາດເຕັມແລ້ວ</td>
+      <td>ขออภัย เลขสลากของคุณอาจเต็มแล้ว</td>
+      <td class="num">9,272</td>
+      <td class="num">28.6%</td>
+    </tr>
+    <tr>
+      <td>Get Lot Active</td>
+      <td class="err-en">(connection failed - no response)</td>
+      <td>เชื่อมต่อไม่ได้ / ไม่มี response</td>
+      <td class="num">547</td>
+      <td class="num">1.7%</td>
+    </tr>
+    <tr>
+      <td>Step 1: Create Bill</td>
+      <td class="err-en">504 Gateway Timeout</td>
+      <td>Gateway Timeout — Server ไม่ตอบทัน</td>
+      <td class="num">372</td>
+      <td class="num">1.1%</td>
+    </tr>
+    <tr>
+      <td>Step 3: Get Bill Detail</td>
+      <td class="err-en">BILL_NOT_FOUND</td>
+      <td>ไม่พบบิล (BILL_NOT_FOUND)</td>
+      <td class="num">110</td>
+      <td class="num">0.3%</td>
+    </tr>
+    <tr>
+      <td>Step 1: Create Bill</td>
+      <td class="err-en">Failed to save your order, please try again</td>
+      <td>บันทึกออเดอร์ไม่สำเร็จ กรุณาลองใหม่</td>
+      <td class="num">59</td>
+      <td class="num">0.2%</td>
+    </tr>
+    <tr>
+      <td>Step 3: Get Bill Detail</td>
+      <td class="err-en">Error 1815 (HY000): Internal error: Session creation failed</td>
+      <td>DB Error: Session creation failed</td>
+      <td class="num">46</td>
+      <td class="num">0.1%</td>
+    </tr>
+    <tr>
+      <td>Step 3: Get Bill Detail</td>
+      <td class="err-en">invalid connection</td>
+      <td>การเชื่อมต่อ DB ไม่ถูกต้อง</td>
+      <td class="num">9</td>
+      <td class="num">0.0%</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Errors by Hour</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Hour</th><th>Count</th><th>Distribution</th></tr></thead>
+        <tbody>
+    <tr>
+      <td>2026-06-20 11:00</td>
+      <td class="num">9,284</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:40%;background:#6366f1"></div></div></td>
+    </tr>
+    <tr>
+      <td>2026-06-20 12:00</td>
+      <td class="num">23,154</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#6366f1"></div></div></td>
+    </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Generated 2026-06-20 12:42:33 · Locust Load Test Error Report</footer>
+</div>
+</body>
+</html>

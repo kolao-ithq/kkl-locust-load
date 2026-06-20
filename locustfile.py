@@ -103,7 +103,8 @@ class SellWorkflowTasks(SequentialTaskSet):
     @task
     def step1_create_bill(self):
         name = ENDPOINTS["create_bill"]
-        random_digit = [27, 67, 127, 167, 227, 267, 327, 367, 427, 467, 527, 567, 627, 667, 727, 767, 827, 867, 927, 967, 17, 57, 36, 76, 40, 80]
+        # random_digit = [27, 67, 127, 167, 227, 267, 327, 367, 427, 467, 527, 567, 627, 667, 727, 767, 827, 867, 927, 967, 17, 57, 36, 76, 40, 80]
+        random_digit = [27, 67, 17, 57, 36, 76, 40, 80]
         random_price = [1000, 2000]
         lotto_draw_number = [
             {"digit": str(d), "money": random.choice(random_price)}
