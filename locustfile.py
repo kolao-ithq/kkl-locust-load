@@ -14,13 +14,13 @@ _error_log_lock = threading.Lock()
 PHONE = "02056677603"
 CUSTOMER_ID = 50
 BCEL_CALLBACK_API_KEY = "ZoiPCydmGh7vsVKGPLBfUZ9E"
+BCEL_CALLBACK_SKIP_RATIO = 0.5  # 50% skip step2, 50% call callback
 
 ENDPOINTS = {
     "lot_active": "/app/api/v1/lot/active-lot",
-    # "create_bill": "/app-sell/api/v3/customer/oauth/draw/create",
-    "create_bill": "/app-sell/api/v1/sell/simulate",
+    "create_bill": "/app-sell/api/v3/customer/oauth/draw/create",
     "bill_detail": "/app/api/v1/bill-history/detail/{bill_id}",
-    "bcel_callback": "/callback/api/v1/bcel/callback/test",
+    "bcel_callback": "/callback/api/v1/bcel/callback",
 }
 
 
@@ -115,7 +115,7 @@ class SellWorkflowTasks(SequentialTaskSet):
             "lotto_draw_number": lotto_draw_number,
             "mute_lotto": [{"id": 0}],
             "payment_request": {
-                "draw_id": 26091,
+                # "draw_id": 26092,
                 "bill_id": None,
                 "payment_link_id": None,
                 "payment_method_id": 4,
@@ -142,6 +142,14 @@ class SellWorkflowTasks(SequentialTaskSet):
 
     @task
     def step2_bcel_callback(self):
+        if random.random() < BCEL_CALLBACK_SKIP_RATIO:
+            logger.info(
+                "[Step 2] BCEL callback skipped (bill_id=%s ticket_id=%s)",
+                self.ctx.get("bill_id"),
+                self.ctx.get("ticket_id"),
+            )
+            return
+
         ticket_id = self.ctx.get("ticket_id")
         if not ticket_id:
             self._log_step_error("Step 2: BCEL Callback", "ticket_id missing for BCEL callback")
@@ -149,7 +157,7 @@ class SellWorkflowTasks(SequentialTaskSet):
             return
 
         callback_name = ENDPOINTS["bcel_callback"]
-        callback_payload = {"ticket_id": ticket_id, "is_from_test": True}
+        callback_payload = {"ticket_id": ticket_id}
         callback_headers = {"x-api-key": BCEL_CALLBACK_API_KEY}
         auth_header = self.client.headers.pop("Authorization", None)
         try:

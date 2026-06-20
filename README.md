@@ -30,3 +30,6 @@ docker service scale \
   ithq-kkl-sell-services=8 \
   ithq-kkl-producer-service=6 \
   ithq-kkl-core=6
+
+  docker service scale ithq-kkl-app-services=12
+
