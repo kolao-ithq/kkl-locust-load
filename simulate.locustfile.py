@@ -34,7 +34,10 @@ def _random_items():
 
 
 class SimulateSellUser(HttpUser):
-    host = "https://simulate.kolaogroup.la"
+    # host = "https://simulate.kolaogroup.la"
+    host = "http://202.137.144.77:30016" # Public IP
+    # host = "https://kklloadt.kokkokm.com" # ADC
+
     wait_time = between(1, 2)
     token = "sim.access.dealer01.1783307362"
 
