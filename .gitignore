@@ -2,3 +2,5 @@ logs/
 logs/
 logs/*.log
 logs/
+.env
+*.txt
