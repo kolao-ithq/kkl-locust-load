@@ -36,4 +36,4 @@ docker service scale \
 
 
 
-locust -f locustfile_balance.py
+locust -f locustfile.py

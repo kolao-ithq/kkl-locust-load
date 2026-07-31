@@ -7,7 +7,7 @@ from pathlib import Path
 
 logger = logging.getLogger("locust")
 
-LOG_DIR = Path("/Users/souny-kks/Documents/DevSecOps/locust/logs")
+LOG_DIR = Path(__file__).parent / "logs"
 ERROR_LOG_FILE = LOG_DIR / "workflow-errors.log"
 _error_log_lock = threading.Lock()
 
@@ -17,15 +17,15 @@ BCEL_CALLBACK_API_KEY = "ZoiPCydmGh7vsVKGPLBfUZ9E"
 BCEL_CALLBACK_SKIP_RATIO = 0.5  # 50% skip step2, 50% call callback
 
 ENDPOINTS = {
-    "lot_active": "/app/api/v1/lot/active-lot",
-    "create_bill": "/app-sell/api/v3/customer/oauth/draw/create",
-    "bill_detail": "/app/api/v1/bill-history/detail/{bill_id}",
-    "bcel_callback": "/callback/api/v1/bcel/callback",
+    "lot_active": "/api/v1/customer/oauth/installment/days",
+    "create_bill": "/api/v3/customer/oauth/draw/simulate",
+    "bill_detail": "/api/v1/customer/oauth/lotto/draw/DetailBillHistory?id={bill_id}",
+    "bcel_callback": "/api/v1/bcel/callback",
 }
 
 
 class SellWorkflowTasks(SequentialTaskSet):
-    """Workflow: active lot → create bill → BCEL callback → bill detail."""
+    """Workflow: active lot → create bill → bill detail → BCEL callback."""
 
     def on_start(self):
         self.ctx = {}
@@ -126,13 +126,13 @@ class SellWorkflowTasks(SequentialTaskSet):
             },
         }
         response = self.client.post(name, json=payload, name=name)
-        if not self._assert_ok(response, "Step 1: Create Bill"):
+        if not self._assert_ok(response, "Step 1: Create Bill", expected_status=201):
             return
         body = response.json()
         if not self._assert_api_status(body, "Step 1: Create Bill"):
             return
         data = body.get("data", {})
-        self.ctx["bill_id"] = data.get("bill_id")
+        self.ctx["bill_id"] = data.get("id")
         self.ctx["ticket_id"] = data.get("ticket_id")
         logger.info(
             "[Step 1] Bill created: bill_id=%s ticket_id=%s lotto_draw_number=%s",
@@ -142,10 +142,36 @@ class SellWorkflowTasks(SequentialTaskSet):
         )
 
     @task
-    def step2_bcel_callback(self):
+    def step2_get_bill_detail(self):
+        bill_id = self.ctx.get("bill_id")
+        if not bill_id:
+            self._log_step_error("Step 2: Get Bill Detail", "bill_id missing from step 1")
+            self.interrupt()
+            return
+        name = ENDPOINTS["bill_detail"].format(bill_id=bill_id)
+        response = self.client.get(name, name=name)
+        if not self._assert_ok(response, "Step 2: Get Bill Detail"):
+            return
+        body = response.json()
+        if body.get("status") is not None and not self._assert_api_status(body, "Step 2: Get Bill Detail"):
+            return
+        data = body.get("data", body)
+        self.ctx["ticket_id"] = data.get("ticket_id") or self.ctx.get("ticket_id")
+        self.ctx["total_amount"] = data.get("total_amount")
+        self.ctx["bill_status_name"] = data.get("bill_status_name")
+        logger.info(
+            "[Step 2] Bill detail: bill_id=%s ticket_id=%s status=%s amount=%s",
+            bill_id,
+            data.get("ticket_id"),
+            data.get("bill_status_name"),
+            data.get("total_amount"),
+        )
+
+    @task
+    def step3_bcel_callback(self):
         if random.random() < BCEL_CALLBACK_SKIP_RATIO:
             logger.info(
-                "[Step 2] BCEL callback skipped (bill_id=%s ticket_id=%s)",
+                "[Step 3] BCEL callback skipped (bill_id=%s ticket_id=%s)",
                 self.ctx.get("bill_id"),
                 self.ctx.get("ticket_id"),
             )
@@ -153,7 +179,7 @@ class SellWorkflowTasks(SequentialTaskSet):
 
         ticket_id = self.ctx.get("ticket_id")
         if not ticket_id:
-            self._log_step_error("Step 2: BCEL Callback", "ticket_id missing for BCEL callback")
+            self._log_step_error("Step 3: BCEL Callback", "ticket_id missing for BCEL callback")
             self.interrupt()
             return
 
@@ -168,35 +194,9 @@ class SellWorkflowTasks(SequentialTaskSet):
         finally:
             if auth_header is not None:
                 self.client.headers["Authorization"] = auth_header
-        if not self._assert_ok(callback_response, "Step 2: BCEL Callback"):
+        if not self._assert_ok(callback_response, "Step 3: BCEL Callback"):
             return
-        logger.info("[Step 2] BCEL callback: ticket_id=%s response=%s", ticket_id, callback_response.text)
-
-    @task
-    def step3_get_bill_detail(self):
-        bill_id = self.ctx.get("bill_id")
-        if not bill_id:
-            self._log_step_error("Step 3: Get Bill Detail", "bill_id missing from step 1")
-            self.interrupt()
-            return
-        name = ENDPOINTS["bill_detail"].format(bill_id=bill_id)
-        response = self.client.get(name, name=name)
-        if not self._assert_ok(response, "Step 3: Get Bill Detail"):
-            return
-        body = response.json()
-        if body.get("status") is not None and not self._assert_api_status(body, "Step 3: Get Bill Detail"):
-            return
-        data = body.get("data", body)
-        self.ctx["ticket_id"] = data.get("ticket_id") or self.ctx.get("ticket_id")
-        self.ctx["total_amount"] = data.get("total_amount")
-        self.ctx["bill_status_name"] = data.get("bill_status_name")
-        logger.info(
-            "[Step 3] Bill detail: bill_id=%s ticket_id=%s status=%s amount=%s",
-            bill_id,
-            data.get("ticket_id"),
-            data.get("bill_status_name"),
-            data.get("total_amount"),
-        )
+        logger.info("[Step 3] BCEL callback: ticket_id=%s response=%s", ticket_id, callback_response.text)
 
 class SellWorkflowUser(HttpUser):
     wait_time = between(1, 2)
